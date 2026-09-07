@@ -1,0 +1,61 @@
+{
+    "name": "graph-mail/laravel-graph-mail",
+    "description": "Send Laravel mail through the Microsoft Graph API (Mail.Send application permission) — no SMTP, no app passwords, works with modern-auth-only tenants.",
+    "keywords": [
+        "laravel",
+        "mail",
+        "mailer",
+        "microsoft-graph",
+        "office365",
+        "outlook",
+        "azure-ad",
+        "smtp-alternative"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mohamed Essam",
+            "email": "mesam5081@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/mail": "^10.0|^11.0|^12.0",
+        "symfony/mailer": "^6.0|^7.0",
+        "symfony/mime": "^6.0|^7.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "pestphp/pest": "^2.0|^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "GraphMail\\LaravelGraphMail\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GraphMail\\LaravelGraphMail\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "GraphMail\\LaravelGraphMail\\GraphMailServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
