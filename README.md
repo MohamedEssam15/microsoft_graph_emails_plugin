@@ -40,10 +40,10 @@ php artisan vendor:publish --tag=graph-mail-config
 ```env
 MAIL_MAILER=graph
 
-MS_GRAPH_TENANT_ID=your-tenant-id
-MS_GRAPH_CLIENT_ID=your-client-id
-MS_GRAPH_CLIENT_SECRET=your-client-secret-value
-MS_GRAPH_SENDER=noreply@yourdomain.com
+MS_TENANT_ID=your-tenant-id
+MS_CLIENT_ID=your-client-id
+MS_CLIENT_SECRET=your-client-secret-value
+MS_SENDER_EMAIL=noreply@yourdomain.com
 ```
 
 `config/mail.php` — add the `graph` mailer:
