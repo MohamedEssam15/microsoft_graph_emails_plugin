@@ -71,19 +71,26 @@ Mail::raw('Plain text body', function ($message) {
 });
 ```
 
-### Sending from a different address per-message
+### The sender is always `MS_SENDER_EMAIL` — by design
 
-The transport uses the Mailable's `from()` address when set, falling back to `MS_GRAPH_SENDER`:
+The transport **always** sends as the mailbox configured in `MS_SENDER_EMAIL`. It deliberately ignores `->from()` on a Mailable and Laravel's global `config('mail.from')`.
+
+This is intentional, not a limitation. Those config paths have no relationship to which mailbox your Azure AD app is actually permitted to send as via `Mail.Send` — if the transport honored them, a stray `mail.from` default (or an unedited scaffold placeholder like `user@host`) could silently override the one mailbox you've actually granted Graph access to, producing a confusing `404 ErrorInvalidUser` from Graph instead of a clear local error.
 
 ```php
 Mail::raw('Billing question follow-up', function ($message) {
-    $message->to('customer@example.com')
-        ->from('billing@yourdomain.com')
-        ->subject('Re: Invoice #1234');
+    $message->to('customer@example.com')->subject('Re: Invoice #1234');
 });
+// Sent as MS_SENDER_EMAIL, regardless of any ->from() call.
 ```
 
-Both addresses must be mailboxes your app is permitted to send from (see the Application Access Policy note below if your tenant restricts this).
+**If you need to send from more than one mailbox** (e.g. `billing@` vs `support@`), the supported approach is to register the package's service provider once per sender and bind separate mailer names — see [Multiple senders](#multiple-senders) below — rather than relying on per-message `from()`.
+
+If `MS_SENDER_EMAIL` is missing or isn't a valid email address (including a leftover placeholder like `user@host`), the transport throws a `GraphMailException` immediately, before ever calling Graph, so you get a clear local error instead of a `404 ErrorInvalidUser` round-trip.
+
+### Multiple senders
+
+To send from more than one mailbox, define additional mailers pointing at the same `graph` transport but with their own env-driven sender, by publishing a second config value and mailer entry — or open an issue/PR if you need first-class multi-sender support; it's on the roadmap.
 
 ### Attachments
 
@@ -153,11 +160,15 @@ New-ApplicationAccessPolicy -AppId "your-client-id" `
 
 **3. The sender mailbox isn't a valid, licensed mailbox.**
 
-Confirm `MS_GRAPH_SENDER` points to an actual licensed user or shared mailbox — not a distribution list, security group, or unlicensed account.
+Confirm `MS_SENDER_EMAIL` points to an actual licensed user or shared mailbox — not a distribution list, security group, or unlicensed account.
+
+### `404 ErrorInvalidUser: 'user@host' is invalid`
+
+`user@host` is Laravel's unedited scaffold placeholder for `MAIL_FROM_ADDRESS`. On package versions before the sender was locked to `MS_SENDER_EMAIL`, a Mailable's `from()` or the global `mail.from` config could silently override the sender and get sent straight to Graph as a literal string. As of this version the transport ignores both and always uses `MS_SENDER_EMAIL` — if you still see this, check that `MS_SENDER_EMAIL` itself isn't set to a placeholder, and run `php artisan config:clear` after fixing it.
 
 ### `405 Method Not Allowed` on the sendMail call
 
-Almost always a malformed URL, not an actual verb issue — usually caused by `MS_GRAPH_SENDER` being empty, or containing quotes/trailing whitespace/newlines from a copy-paste into `.env`. Run:
+Almost always a malformed URL, not an actual verb issue — usually caused by `MS_SENDER_EMAIL` being empty, or containing quotes/trailing whitespace/newlines from a copy-paste into `.env`. Run:
 
 ```bash
 php artisan tinker

@@ -29,8 +29,19 @@ class GraphMailException extends Exception
     public static function missingSender(): self
     {
         return new self(
-            'No sender mailbox resolved. Set "from" on the Mailable, pass it to Mail::to()->from(...), '
-            . 'or configure graph-mail.default_sender in your .env as MS_SENDER.'
+            'No sender mailbox configured. Set MS_SENDER_EMAIL in your .env '
+            . '(graph-mail.default_sender). The transport always sends as this '
+            . 'address — it does not read the "from" address on Mailables or '
+            . 'config/mail.php.'
+        );
+    }
+
+    public static function invalidSender(string $sender): self
+    {
+        return new self(
+            "MS_SENDER_EMAIL is set to \"{$sender}\", which is not a valid email address. "
+            . 'Check your .env for a leftover placeholder (e.g. "user@host") or a typo, '
+            . 'then run php artisan config:clear.'
         );
     }
 }

@@ -25,7 +25,7 @@ class GraphTransport extends AbstractTransport
     {
         $email = MessageConverter::toEmail($message->getOriginalMessage());
 
-        $sender = $this->resolveSender($email);
+        $sender = $this->resolveSender();
         $payload = $this->buildPayload($email);
         $token = $this->tokenService->getAccessToken();
 
@@ -37,18 +37,29 @@ class GraphTransport extends AbstractTransport
         }
     }
 
-    private function resolveSender(Email $email): string
+    /**
+     * The sender is always the configured MS_SENDER_EMAIL — deliberately
+     * ignoring any "from" address set on the Mailable or in config/mail.php.
+     *
+     * This is intentional: Laravel's global mail.from config (or a stray
+     * ->from() call, or an unedited scaffold placeholder like "user@host")
+     * has no relationship to which mailbox your Azure AD app is actually
+     * permitted to send as via Mail.Send. Using it here would let a random
+     * config value silently override the one mailbox you've actually
+     * granted Graph API access to, producing a confusing 404 from Graph
+     * instead of a clear local error. If you need to send from a different
+     * permitted mailbox, change MS_SENDER_EMAIL, not the Mailable.
+     */
+    private function resolveSender(): string
     {
-        $from = $email->getFrom();
-
-        if (!empty($from)) {
-            return $from[0]->getAddress();
-        }
-
         $sender = $this->defaultSender;
 
         if (empty($sender)) {
             throw GraphMailException::missingSender();
+        }
+
+        if (!filter_var($sender, FILTER_VALIDATE_EMAIL)) {
+            throw GraphMailException::invalidSender($sender);
         }
 
         return $sender;
